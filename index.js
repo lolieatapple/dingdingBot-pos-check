@@ -15,41 +15,73 @@ let option = {
 let apiTest = new ApiInstance(YourApiKey, YourSecretKey, option);
 
 let testArray = [
-  ['getBalance', 'WAN', '0x4e6b5f1abdd517739889334df047113bd736c546'],
-  ['getRegTokens', 'ETH'],
-  ['getMultiTokenInfo', 'ETH', ["0xc5bc855056d99ef4bda0a4ae937065315e2ae11a","0x7017500899433272b4088afe34c04d742d0ce7df"]],
-  ['getEpochID', 'WAN'],
-  ['getSlotID', 'WAN'],
-  ['getStakerInfo', 'WAN', 5989868],
-  ['getEpochIncentivePayDetail', 'WAN', 18253],
-  ['getEpochIncentivePayDetail', 'WAN', 18203],
-  ['getValidatorInfo', 'WAN', '0x7212b9e259792879d85ca3227384f1005437e5f5'],
-  ['getValidatorStakeInfo', 'WAN', '0x7212b9e259792879d85ca3227384f1005437e5f5'],
-  ['getValidatorTotalIncentive', 'WAN', '0x7212b9e259792879d85ca3227384f1005437e5f5'],
-  ['getDelegatorStakeInfo', 'WAN', '0x4e6b5f1abdd517739889334df047113bd736c546'],
-  ['getDelegatorIncentive', 'WAN', '0x4e6b5f1abdd517739889334df047113bd736c546'],
-  ['getDelegatorTotalIncentive', 'WAN', '0x4e6b5f1abdd517739889334df047113bd736c546'],
-  ['getCurrentEpochInfo', 'WAN'],
-  ['getCurrentStakerInfo', 'WAN'],
-  ['getSlotCount', 'WAN'],
-  ['getSlotTime', 'WAN'],
-  ['getValidatorSupStakeInfo', 'WAN', ['0x7212b9e259792879d85ca3227384f1005437e5f5']],
-  ['getDelegatorSupStakeInfo', 'WAN', '0x4e6b5f1abdd517739889334df047113bd736c546'],
-  ['getEpochIncentiveBlockNumber', 'WAN', 18253],
-  ['getEpochStakeOut', 'WAN', 18253],
-  ['getMultiBalances', 'WAN', ['0x7212b9e259792879d85ca3227384f1005437e5f5', '0x4e6b5f1abdd517739889334df047113bd736c546']],
-
+  ['getRegisteredValidator', 'WAN', '0x0288c83219701766197373d1149f616c62b52a7d'],
 ];
+
+let addresses = {};
+
 
 async function main() {
   try {
-    console.log('Total:', testArray.length);
-    let result = await apiTest.getBalance('WAN', '0x4e6b5f1abdd517739889334df047113bd736c546');
-    console.log('balance:', result);
+    // console.log('Total:', testArray.length);
+    // let result = await apiTest.getBalance('WAN', '0x4e6b5f1abdd517739889334df047113bd736c546');
+    // console.log('balance:', result);
+
+    let currentStakerInfo = await apiTest['getCurrentStakerInfo']('WAN');
+    // console.log(ret);
+    // return;
+
+    // for (var m=0; m<currentStakerInfo.length; m++) {
+    //   if ('0xf9393474e1b86c7f8e224b9d36529a9bb6542ab7' == currentStakerInfo[m].address) {
+    //     console.log(currentStakerInfo[m])
+    //   }
+    // }
+
+    // return;
+
+
+    let startEpoch = 18157;
+    let endEpoch = 18337;
+
+    testArray = []
+    for (let i=0; i<endEpoch-startEpoch; i++) {
+      testArray[i] = ['getLeaderGroupByEpochID', 'WAN', startEpoch + i];
+    }
 
     for (let i=0; i<testArray.length; i++) {
       await apiCall(testArray[i][0], testArray[i][1], testArray[i][2]);
+      console.log(i);
     }
+
+    for (var i in addresses) {
+      let ret = await apiTest['getRegisteredValidator'](i);
+      addresses[i].name = ret[0]?ret[0].name:i;
+      // addresses[i].addr = i;
+      for (var m=0; m<currentStakerInfo.length; m++) {
+        if (i == currentStakerInfo[m].address) {
+          addresses[i].votingPower = Number(currentStakerInfo[m].votingPower)
+          addresses[i].amount = Number(currentStakerInfo[m].amount)
+          if (currentStakerInfo[m].partners) {
+            for (var n=0; n<currentStakerInfo[m].partners.length; n++) {
+              addresses[i].votingPower += Number(currentStakerInfo[m].partners[n].votingPower);
+              addresses[i].amount += Number(currentStakerInfo[m].partners[n].amount);
+            }
+          }
+
+          if (currentStakerInfo[m].clients) {
+            for (var n=0; n<currentStakerInfo[m].clients.length; n++) {
+              addresses[i].votingPower += Number(currentStakerInfo[m].clients[n].votingPower);
+              addresses[i].amount += Number(currentStakerInfo[m].clients[n].amount);
+            }
+          }
+        }
+      }
+      console.log(addresses[i]);
+    }
+
+
+    // console.log(addresses);
+
     apiTest.close();
     process.exit(0);
   } catch (err) {
@@ -59,11 +91,25 @@ async function main() {
   }
 }
 
-let count = 0;
 async function apiCall(name, chain = 'WAN', value) {
-  let start = Date.now();
-  await apiTest[name](chain, value);
-  console.log(count++, name, (Date.now() - start)/1000 + ' s');
+  let ret = await apiTest[name](chain, value);
+  for (let i=0; i<ret.length; i++) {
+    if (ret[i].pubBn256.length < 3) {
+      continue;
+    }
+
+    if (!addresses[ret[i].secAddr]) {
+      addresses[ret[i].secAddr] = {};
+      addresses[ret[i].secAddr].times = 0
+    }
+
+    if (ret[i].secAddr == '0xf9393474e1b86c7f8e224b9d36529a9bb6542ab7') {
+      // console.log('Find wetez!', value, ret[i]);
+    }
+
+    addresses[ret[i].secAddr].times++;
+  }
+  return ret;
 }
 
 main();
