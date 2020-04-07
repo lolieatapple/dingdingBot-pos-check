@@ -1,5 +1,5 @@
-# iWan-time-test
-test for iWan delay.
+# iWan-pos-check
+Check pos selection probabilty.
 
 ```
 npm i
