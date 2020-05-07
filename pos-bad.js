@@ -24,7 +24,7 @@ let addresses = {};
 async function main() {
   try {
     let missed = [];
-    for(let i=18350; i<=18359; i++) {
+    for(let i=18350; i<=18388; i++) {
       let ret = await apiTest['getValidatorActivity']('WAN', i);
       if (!ret) {
         break;
