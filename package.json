@@ -5,6 +5,8 @@
   "author": "molin",
   "license": "MIT",
   "dependencies": {
-    "iwan-sdk": "^1.1.1"
+    "axios": "^0.19.2",
+    "iwan-sdk": "^1.1.1",
+    "node-schedule": "^1.3.2"
   }
 }
