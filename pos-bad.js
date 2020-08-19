@@ -63,6 +63,8 @@ async function main() {
     if (missed.length > 0) {
       console.log(msg);
       await dingdingSend(msg);
+    } else {
+      await dingdingSend("一切正常，没有异常节点");
     }
 
 
